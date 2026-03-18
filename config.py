@@ -7,6 +7,16 @@ COLLECTION_MAP = {
     "AQ":    SHARED_FIELDS + ["aq_"],
     "SRS":   SHARED_FIELDS + ["srs_"],
     "SAICA": SHARED_FIELDS + ["saica_"],
+    "SCQ":   SHARED_FIELDS + ["scq_"],
+    "CAST":  SHARED_FIELDS + ["cast_"],
+    "BRIEF": SHARED_FIELDS + ["brief_"],
+    "CPRS":   SHARED_FIELDS + ["cprs_"],
+    "CTRS":   SHARED_FIELDS + ["ctrs_"],
+
+    # "SDQ":    SHARED_FIELDS + ["sdq_"],
+    # "PMI":    SHARED_FIELDS + ["pmi_"],
+    # "PBI":    SHARED_FIELDS + ["pbi_"],
+    # "FACES":  SHARED_FIELDS + ["faces_"],
 }
 
 UNIQUE_KEY = ["famid", "record_date", "role"]
@@ -19,6 +29,11 @@ VALID_RANGE = {
     "AQ":    {"type": "int", "range": (0, 3)},
     "SRS":   {"type": "int", "range": (1, 4)},
     "SAICA": {"type": "per_field"},
+    "SCQ":   {"type": "int", "range": (0, 1)},
+    "CAST":  {"type": "int", "range": (0, 1)},
+    "BRIEF": {"type": "int", "range": (1, 3)},
+    "CPRS":   {"type": "int", "range": (0, 3)},
+    "CTRS":   {"type": "int", "range": (0, 3)},
 }
 
 # SAICA 個別欄位規則，其餘欄位套用 SAICA_DEFAULT_RULE

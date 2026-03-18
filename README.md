@@ -13,6 +13,7 @@ data-importer/
 ├── requirements.txt
 ├── config.py
 ├── main.py
+├── delete_main.py
 └── src/
     ├── __init__.py
     ├── reader.py

@@ -3,11 +3,7 @@ from config import COLLECTION_MAP, SHARED_FIELDS, VALID_RANGE, SAICA_FIELD_RULES
 
 
 def validate_and_convert(col, val, rule, collection):
-    if val is None:
-        return None, None
-
-    # 999 跳過驗證，直接存 null
-    if str(val).strip() == "999":
+    if val is None or pd.isna(val) or str(val).strip() in ("", "999", "N/A", "n/a", "NA", "na"):
         return None, None
 
     if rule["type"] == "float":
@@ -18,10 +14,14 @@ def validate_and_convert(col, val, rule, collection):
 
     if rule["type"] == "int":
         try:
-            int_val = int(float(val))
+            float_val = float(val)
+            if float_val != int(float_val):  # 2.5 != 2 -> 跳錯
+                return None, f"{col} 數值錯誤(非整數)"
+            int_val = int(float_val)
         except (ValueError, TypeError):
             return None, f"{col} 數值錯誤"
 
+        # AQ 轉換 4->3, 3->2, 2->1, 1->0
         # if collection == "AQ":
         #     int_val = int_val - 1
 
@@ -39,11 +39,13 @@ def get_rule(collection, col):
     return VALID_RANGE[collection]
 
 
-def split_by_collection(df: pd.DataFrame) -> tuple:
+def split_by_collection(df: pd.DataFrame, selected=None) -> tuple:
     valid_result = {}
     error_rows = []
+    skipped_rows = []
 
-    for collection, fields in COLLECTION_MAP.items():
+    items = [(k, v) for k, v in COLLECTION_MAP.items() if selected is None or k in selected]
+    for collection, fields in items:
         prefixes = [f for f in fields if f not in SHARED_FIELDS]
         scale_cols = [
             col for col in df.columns
@@ -67,6 +69,11 @@ def split_by_collection(df: pd.DataFrame) -> tuple:
                 else:
                     converted[col] = new_val
 
+            # 量表欄位全為空值，跳過不上傳
+            if all(converted.get(col) is None for col in scale_cols):
+                skipped_rows.append({"collection": collection, **row.to_dict()})
+                continue
+
             if errors:
                 error_row = row.to_dict()
                 famid = error_row.get("famid", "")
@@ -79,4 +86,4 @@ def split_by_collection(df: pd.DataFrame) -> tuple:
 
         valid_result[collection] = valid_docs
 
-    return valid_result, error_rows
+    return valid_result, error_rows, skipped_rows

@@ -1,5 +1,8 @@
 import pandas as pd
 from datetime import datetime
+import os
+
+ERROR_FILE = "errors.xlsx"
 
 def write_error_xlsx(error_rows: list):
     if not error_rows:
@@ -7,11 +10,16 @@ def write_error_xlsx(error_rows: list):
         return
 
     df = pd.DataFrame(error_rows)
-
-    # collection 欄位移到最前面，error 欄位移到第二
     cols = ["collection", "error"] + [c for c in df.columns if c not in ("collection", "error")]
     df = df[cols]
 
-    filename = f"errors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    df.to_excel(filename, index=False)
-    print(f"error file saved: {filename}, rows: {len(error_rows)}")
+    sheet_name = datetime.now().strftime("%m%d_%H%M%S")
+
+    if os.path.exists(ERROR_FILE):
+        with pd.ExcelWriter(ERROR_FILE, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+    else:
+        with pd.ExcelWriter(ERROR_FILE, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    print(f"error file updated: {ERROR_FILE}, sheet: {sheet_name}, rows: {len(error_rows)}")
