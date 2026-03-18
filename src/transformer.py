@@ -1,5 +1,7 @@
 import pandas as pd
-from config import COLLECTION_MAP, SHARED_FIELDS, VALID_RANGE, SAICA_FIELD_RULES, SAICA_DEFAULT_RULE
+from config import COLLECTION_MAP, SHARED_FIELDS, VALID_RANGE
+from config import SAICA_FIELD_RULES, SAICA_DEFAULT_RULE
+from config import SDQ_FIELD_RULES, SDQ_DEFAULT_RULE
 
 
 def validate_and_convert(col, val, rule, collection):
@@ -36,6 +38,8 @@ def validate_and_convert(col, val, rule, collection):
 def get_rule(collection, col):
     if collection == "SAICA":
         return SAICA_FIELD_RULES.get(col, SAICA_DEFAULT_RULE)
+    if collection == "SDQ":
+        return SDQ_FIELD_RULES.get(col, SDQ_DEFAULT_RULE)
     return VALID_RANGE[collection]
 
 
