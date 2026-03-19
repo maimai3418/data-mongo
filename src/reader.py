@@ -8,6 +8,7 @@ def read_xlsx(filepath: str) -> pd.DataFrame:
         df["record_date"] = pd.to_datetime(df["record_date"]).dt.strftime("%Y-%m-%d")
 
     df = df.where(pd.notna(df), None)
+    # print(df.columns.tolist())
     df = df.dropna(subset=["famid", "record_date"])  # 過濾空白行
     df = df.reset_index(drop=True)
     return df

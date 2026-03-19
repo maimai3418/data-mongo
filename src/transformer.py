@@ -10,9 +10,14 @@ def validate_and_convert(col, val, rule, collection):
 
     if rule["type"] == "float":
         try:
-            return float(val), None
+            float_val = float(val)
         except (ValueError, TypeError):
             return None, f"{col} 數值錯誤"
+        if "min" in rule and float_val < rule["min"]:
+            return None, f"{col} 數值錯誤"
+        if "max" in rule and float_val > rule["max"]:
+            return None, f"{col} 數值錯誤"
+        return float_val, None
 
     if rule["type"] == "int":
         try:
@@ -36,11 +41,38 @@ def validate_and_convert(col, val, rule, collection):
 
 
 def get_rule(collection, col):
+    fields = COLLECTION_MAP.get(collection)
+    if isinstance(fields, dict):
+        # extra_cols 自帶規則
+        extra_cols = fields.get("extra_cols", {})
+        if col in extra_cols:
+            return extra_cols[col]
+        # prefix 欄位：先查 field_rules，再用 default_rule
+        field_rules = fields.get("field_rules", {})
+        if col in field_rules:
+            return field_rules[col]
+        if "default_rule" in fields:
+            return fields["default_rule"]
+    # list 格式的 per_field 量表
     if collection == "SAICA":
         return SAICA_FIELD_RULES.get(col, SAICA_DEFAULT_RULE)
     if collection == "SDQ":
         return SDQ_FIELD_RULES.get(col, SDQ_DEFAULT_RULE)
     return VALID_RANGE[collection]
+
+
+def parse_collection_config(fields):
+    """解析 COLLECTION_MAP 的值，支援 list 和 dict 兩種格式。"""
+    if isinstance(fields, dict):
+        prefixes = fields.get("prefixes", [])
+        extra_cols = fields.get("extra_cols", {})
+        # extra_cols 可以是 dict (帶規則) 或 list (僅名稱)
+        extra_col_names = list(extra_cols.keys()) if isinstance(extra_cols, dict) else list(extra_cols)
+        shared = fields.get("shared_fields", SHARED_FIELDS)
+        return shared, prefixes, extra_col_names
+    else:
+        prefixes = [f for f in fields if f not in SHARED_FIELDS]
+        return list(SHARED_FIELDS), prefixes, []
 
 
 def split_by_collection(df: pd.DataFrame, selected=None) -> tuple:
@@ -50,12 +82,16 @@ def split_by_collection(df: pd.DataFrame, selected=None) -> tuple:
 
     items = [(k, v) for k, v in COLLECTION_MAP.items() if selected is None or k in selected]
     for collection, fields in items:
-        prefixes = [f for f in fields if f not in SHARED_FIELDS]
+        shared, prefixes, extra_cols = parse_collection_config(fields)
         scale_cols = [
             col for col in df.columns
             if any(col.startswith(p) for p in prefixes)
         ]
-        existing_cols = [c for c in SHARED_FIELDS + scale_cols if c in df.columns]
+        # 加入額外指定的欄位（存在於 df 中的）
+        for col in extra_cols:
+            if col in df.columns and col not in scale_cols:
+                scale_cols.append(col)
+        existing_cols = [c for c in shared + scale_cols if c in df.columns]
         sub_df = df[existing_cols].copy()
 
         valid_docs = []
