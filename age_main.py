@@ -11,6 +11,7 @@ from src.error_writer import write_error_xlsx
 from src.import_logger import write_import_log
 from src.logger import log_summary
 from src.utils.select_collections import select_collections
+from src.utils.input_project_code import input_project_code
 from src.utils.wait_and_retry import wait_and_retry
 
 load_dotenv()
@@ -29,6 +30,8 @@ def read_xlsx_age(filepath: str) -> pd.DataFrame:
 
 
 def main():
+    project_code = input_project_code()
+
     selected = select_collections()
     if selected is None:
         return
@@ -176,15 +179,21 @@ def main():
         no_date_count = len([r for r in no_date_rows if r.get("collection") == col_name])
         skipped_col = len(df) - len(docs) - error_count - no_date_count
         log_summary(col_name, len(docs), skipped_col, error_count)
+        if project_code:
+            for doc in docs:
+                doc["research_project_code"] = project_code
         upsert_many(db, col_name, docs)
-        log_entries.append({
+        entry = {
             "collection": col_name,
             "total": len(df),
             "success": len(docs),
             "errors": error_count,
             "skipped": skipped_col,
             "no_date_conflicts": no_date_count,
-        })
+        }
+        if project_code:
+            entry["research_project_code"] = project_code
+        log_entries.append(entry)
 
     print("writing import log...")
     wait_and_retry(lambda: write_import_log(log_entries), "import_log.xlsx")

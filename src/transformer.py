@@ -28,7 +28,9 @@ def validate_and_convert(col, val, rule, collection):
         except (ValueError, TypeError):
             return None, f"{col} 數值錯誤"
 
-        # AQ 轉換 4->3, 3->2, 2->1, 1->0
+        # # AQ 轉換 4->3, 3->2, 2->1, 1->0
+        # # MOST109 ~ NHRI110 早期問卷用的 AQ 計分(prc不變)要改為 0~3 分
+        # # 原本的 1~4 分改為 0~3 分（即原本的 4 分變成 3 分，3 分變成 2 分，以此類推）
         # if collection == "AQ":
         #     int_val = int_val - 1
 

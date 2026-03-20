@@ -6,6 +6,7 @@ from src.logger import log_summary
 from src.error_writer import write_error_xlsx
 from src.import_logger import write_import_log
 from src.utils.select_collections import select_collections
+from src.utils.input_project_code import input_project_code
 from src.utils.wait_and_retry import wait_and_retry
 
 load_dotenv()
@@ -13,6 +14,9 @@ load_dotenv()
 FILEPATH = "import_data.xlsx"
 
 def main():
+    # 輸入計畫代碼（選填）
+    project_code = input_project_code()
+
     # 選擇要上傳的量表
     selected = select_collections()
     if selected is None:
@@ -41,14 +45,20 @@ def main():
         skipped_count = len([r for r in skipped_rows if r.get("collection") == col_name])
         assert len(docs) + error_count + skipped_count == total_rows, f"[{col_name}] count mismatch!"
         log_summary(col_name, len(docs), skipped_count, error_count)
+        if project_code:
+            for doc in docs:
+                doc["research_project_code"] = project_code
         upsert_many(db, col_name, docs)
-        log_entries.append({
+        entry = {
             "collection": col_name,
             "total": total_rows,
             "errors": error_count,
             "skipped": skipped_count,
             "success": len(docs),
-        })
+        }
+        if project_code:
+            entry["research_project_code"] = project_code
+        log_entries.append(entry)
 
     # 記錄本次匯入的統計資訊到 import_log.xlsx
     print("writing import log...")
