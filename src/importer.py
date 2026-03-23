@@ -23,3 +23,4 @@ def upsert_many(db, collection_name: str, docs: list):
     result = col.bulk_write(operations)
     skipped = len(docs) - result.upserted_count
     print(f"[{collection_name}] inserted: {result.upserted_count}, skipped (already exists): {skipped}")
+    return result.upserted_count, skipped

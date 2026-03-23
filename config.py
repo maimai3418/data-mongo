@@ -80,6 +80,10 @@ COLLECTION_MAP = {
     "ASRS":   SHARED_FIELDS + ["asrs_"],
     "CES-D":    SHARED_FIELDS + ["cesd_"],
     "MPI":    SHARED_FIELDS + ["mpi_"],
+    "RBS-R":   SHARED_FIELDS + ["rbsr_"],
+    "SSP":    SHARED_FIELDS + ["ssp_"],
+    "WFIRS-P":   SHARED_FIELDS + ["weip_"],
+    "WFIRS-S":   SHARED_FIELDS + ["weis_"],
     # "FACES":  SHARED_FIELDS + ["faces_"],
 }
 
@@ -109,6 +113,10 @@ VALID_RANGE = {
     "ASRS":   {"type": "int", "range": (0, 4)},
     "CES-D":  {"type": "int", "range": (0, 3)},
     "MPI":    {"type": "int", "range": (0, 1)},
+    "RBS-R":   {"type": "int", "range": (0, 3)},
+    "SSP":    {"type": "int", "range": (1, 5)},
+    "WFIRS-P":   {"type": "int", "range": (0, 3)},
+    "WFIRS-S":   {"type": "int", "range": (0, 3)},
 }
 
 SDQ_FIELD_RULES = {

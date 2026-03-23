@@ -48,13 +48,16 @@ def main():
         if project_code:
             for doc in docs:
                 doc["research_project_code"] = project_code
-        upsert_many(db, col_name, docs)
+        result = upsert_many(db, col_name, docs)
+        inserted, skipped_dup = result if result else (0, 0)
         entry = {
             "collection": col_name,
             "total": total_rows,
+            "success": len(docs),
+            "insert": inserted,
+            "skipped_dup": skipped_dup,
             "errors": error_count,
             "skipped": skipped_count,
-            "success": len(docs),
         }
         if project_code:
             entry["research_project_code"] = project_code

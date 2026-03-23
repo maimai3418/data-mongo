@@ -10,7 +10,7 @@ def write_import_log(log_entries: list):
         entry["timestamp"] = now
 
     df_new = pd.DataFrame(log_entries)
-    col_order = ["collection", "total", "success", "errors", "skipped"]
+    col_order = ["collection", "total", "success", "insert", "skipped_dup", "errors", "skipped"]
     extra = [c for c in df_new.columns if c not in col_order and c != "timestamp"]
     col_order = col_order + extra + ["timestamp"]
     df_new = df_new[[c for c in col_order if c in df_new.columns]]
