@@ -84,6 +84,17 @@ COLLECTION_MAP = {
     "SSP":    SHARED_FIELDS + ["ssp_"],
     "WFIRS-P":   SHARED_FIELDS + ["weip_"],
     "WFIRS-S":   SHARED_FIELDS + ["weis_"],
+    "WHOQOL":  SHARED_FIELDS + ["who_"],
+    "CEQ":    SHARED_FIELDS + ["ceq_"],
+    "C-SBEQ": SHARED_FIELDS + ["csbeq_"],
+    "ERQ_CA": SHARED_FIELDS + ["erqc_"],
+    "BRIEF-S": SHARED_FIELDS + ["briefs_"],
+    "BRIEF-A": SHARED_FIELDS + ["briefa_"],
+    "ERQ_A": SHARED_FIELDS + ["erqa_"],
+    "RAADS-R": SHARED_FIELDS + ["raadsr_"],
+    "TAS-20": SHARED_FIELDS + ["tas_"],
+    "AAQOL": SHARED_FIELDS + ["aaqol_"],
+    "ARI": SHARED_FIELDS + ["ari_"],
     # "FACES":  SHARED_FIELDS + ["faces_"],
 }
 
@@ -117,6 +128,17 @@ VALID_RANGE = {
     "SSP":    {"type": "int", "range": (1, 5)},
     "WFIRS-P":   {"type": "int", "range": (0, 3)},
     "WFIRS-S":   {"type": "int", "range": (0, 3)},
+    "WHOQOL":  {"type": "int", "range": (0, 4)},
+    "CEQ":    {"type": "int", "range": (0, 3)},
+    "C-SBEQ": {"type": "int", "range": (0, 3)},
+    "ERQ_CA": {"type": "int", "range": (1, 5)},
+    "ERQ_A": {"type": "int", "range": (1, 7)},
+    "RAADS-R": {"type": "int", "range": (0, 3)},
+    "TAS-20": {"type": "int", "range": (1, 5)},
+    "BRIEF-S": {"type": "int", "range": (1, 3)},
+    "BRIEF-A": {"type": "int", "range": (0, 2)},
+    "AAQOL": {"type": "int", "range": (1, 5)},
+    "ARI": {"type": "int", "range": (0, 2)},
 }
 
 SDQ_FIELD_RULES = {
