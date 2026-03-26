@@ -95,6 +95,7 @@ COLLECTION_MAP = {
     "TAS-20": SHARED_FIELDS + ["tas_"],
     "AAQOL": SHARED_FIELDS + ["aaqol_"],
     "ARI": SHARED_FIELDS + ["ari_"],
+    "ESQ": SHARED_FIELDS + ["esq_"],
     # "FACES":  SHARED_FIELDS + ["faces_"],
 }
 
@@ -139,6 +140,7 @@ VALID_RANGE = {
     "BRIEF-A": {"type": "int", "range": (0, 2)},
     "AAQOL": {"type": "int", "range": (1, 5)},
     "ARI": {"type": "int", "range": (0, 2)},
+    "ESQ": {"type": "int", "range": (1, 4)},
 }
 
 SDQ_FIELD_RULES = {

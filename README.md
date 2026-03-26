@@ -15,6 +15,7 @@ data-mongo/
 ├── main.py              # 標準匯入（需 record_date）
 ├── age_main.py          # 年齡匯入（只需 age，自動估算 record_date）
 ├── delete_main.py       # 依 famid + record_date 刪除資料
+├── export_main.py       # 匯出 MongoDB 資料為 JSON
 └── src/
     ├── __init__.py
     ├── reader.py          # 讀取 xlsx（標準匯入用）
@@ -77,9 +78,20 @@ python age_main.py
 
 # 刪除資料
 python delete_main.py
+
+# 匯出 MongoDB 資料為 JSON
+python export_main.py
 ```
 
 啟動後會互動選擇要處理的量表。
+
+### 匯出 JSON（export_main.py）
+
+將 MongoDB 中的量表資料匯出為 JSON 檔案：
+
+1. 互動選擇要匯出的量表（或全部）
+2. 自動建立 `exports/YYYYMMDD/` 資料夾（以當日日期命名）
+3. 每個量表匯出為獨立的 `{collection_name}.json`
 
 ---
 
@@ -136,10 +148,11 @@ python delete_main.py
 |------|------|
 | `errors.xlsx` | 驗證失敗的資料（每次執行新增 sheet） |
 | `no_date_records.xlsx` | 年齡衝突或無法估算日期的資料（含 timestamp） |
-| `import_log.xlsx` | **log** sheet：每次匯入的完整紀錄；**pivot** sheet：依量表分組的統計數量 |
+| `import_log.xlsx` | **log** sheet：每次匯入的完整紀錄（含 success / insert / skipped_dup 欄位）；**pivot** sheet：依量表分組的統計數量 |
+| `exports/YYYYMMDD/*.json` | 從 MongoDB 匯出的量表 JSON 檔案 |
 
 ---
 
 ## 支援量表
 
-GSQ、SNAP4、CBCL、AQ、SRS、SAICA、SCQ、CAST、BRIEF、CPRS、CTRS、SDQ、PMI、MPBI、DPBI、APGAR、EPQ、YSR、SUB、ASRI、ASRS、CES-D、MPI
+GSQ、SNAP4、CBCL、AQ、SRS、SAICA、SCQ、CAST、BRIEF、CPRS、CTRS、SDQ、PMI、MPBI、DPBI、APGAR、EPQ、YSR、SUB、ASRI、ASRS、CES-D、MPI、RBS-R、SSP、WFIRS-P、WFIRS-S、WHOQOL、CEQ、C-SBEQ、ERQ_CA、BRIEF-S、BRIEF-A、ERQ_A、RAADS-R、TAS-20、AAQOL、ARI、ESQ
