@@ -16,6 +16,7 @@ data-mongo/
 ├── age_main.py          # 年齡匯入（只需 age，自動估算 record_date）
 ├── delete_main.py       # 依 famid + record_date 刪除資料
 ├── export_main.py       # 匯出 MongoDB 資料為 JSON
+├── collection_stat.py   # 依 collection 統計 famid 數量、格式分類與重複分布
 └── src/
     ├── __init__.py
     ├── reader.py          # 讀取 xlsx（標準匯入用）
@@ -62,10 +63,10 @@ MONGO_DB=your_db_name
 
 Excel 檔案須包含名為 `import` 的 sheet，欄位需求依匯入模式不同：
 
-| 模式 | 必要欄位 | 入口 |
-|------|---------|------|
-| 標準匯入 | `famid`、`record_date`、量表欄位 | `main.py` |
-| 年齡匯入 | `famid`、`age`、量表欄位 | `age_main.py` |
+| 模式     | 必要欄位                         | 入口          |
+| -------- | -------------------------------- | ------------- |
+| 標準匯入 | `famid`、`record_date`、量表欄位 | `main.py`     |
+| 年齡匯入 | `famid`、`age`、量表欄位         | `age_main.py` |
 
 ### 4. 執行匯入
 
@@ -81,9 +82,31 @@ python delete_main.py
 
 # 匯出 MongoDB 資料為 JSON
 python export_main.py
+
+# Collection famid 統計
+python collection_stat.py
 ```
 
 啟動後會互動選擇要處理的量表。
+
+### Collection 統計（collection_stat.py）
+
+互動式輸入 collection 名稱，輸出以下統計：
+
+1. **distinct famid 數量** — 該 collection 內不重複的 famid 總數
+2. **famid 格式分類（distinct）** — 分別計數
+   - 2~5 位數字、開頭為 `1`
+   - 5 位數字、開頭為 `3 / 5 / 6 / 8 / 9`
+   - 6 位數字、開頭為 `4`
+   - 不符合上述規則者歸入「其他」
+3. **famid 結尾數字分布（distinct）** — 各 distinct famid 依末位數字 `0~9` 計數（獨立統計，與格式分類分開）
+4. **重複出現次數分布** — 各 famid 在此 collection 中出現的次數分布（例：`count=1: 3`、`count=2: 4`、`count=3: 1` …）
+
+輸入 `all` 或 `export` → 依 `COLLECTION_MAP` 掃描所有 collection，輸出至 `exports/collection_stat/{MMDD_HHMMSS}_collection_stat.xlsx`：
+
+- **summary** sheet：每列一個 collection，欄位含 `total_records`、`distinct_famid`、各格式分類計數、`其他`
+- **by_last_digit** sheet：每列一個 collection，欄位為 `distinct_famid` 與 `0 結尾`~`9 結尾`
+- **duplicates** sheet：每列一個 collection，欄位為 `count=1`、`count=2`、…（依實際出現的最大次數動態展開）
 
 ### 匯出 JSON（export_main.py）
 
@@ -144,15 +167,15 @@ python export_main.py
 
 ## 輸出檔案
 
-| 檔案 | 說明 |
-|------|------|
-| `errors.xlsx` | 驗證失敗的資料（每次執行新增 sheet） |
-| `no_date_records.xlsx` | 年齡衝突或無法估算日期的資料（含 timestamp） |
-| `import_log.xlsx` | **log** sheet：每次匯入的完整紀錄（含 success / insert / skipped_dup 欄位）；**pivot** sheet：依量表分組的統計數量 |
-| `exports/YYYYMMDD/*.json` | 從 MongoDB 匯出的量表 JSON 檔案 |
+| 檔案                      | 說明                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `errors.xlsx`             | 驗證失敗的資料（每次執行新增 sheet）                                                                               |
+| `no_date_records.xlsx`    | 年齡衝突或無法估算日期的資料（含 timestamp）                                                                       |
+| `import_log.xlsx`         | **log** sheet：每次匯入的完整紀錄（含 success / insert / skipped_dup 欄位）；**pivot** sheet：依量表分組的統計數量 |
+| `exports/YYYYMMDD/*.json` | 從 MongoDB 匯出的量表 JSON 檔案                                                                                    |
 
 ---
 
 ## 支援量表
 
-GSQ、SNAP4、CBCL、AQ、SRS、SAICA、SCQ、CAST、BRIEF、CPRS、CTRS、SDQ、PMI、MPBI、DPBI、APGAR、EPQ、YSR、SUB、ASRI、ASRS、CES-D、MPI、RBS-R、SSP、WFIRS-P、WFIRS-S、WHOQOL、CEQ、C-SBEQ、ERQ_CA、BRIEF-S、BRIEF-A、ERQ_A、RAADS-R、TAS-20、AAQOL、ARI、ESQ
+GSQ、SNAP4、CBCL、AQ、SRS、SAICA、SCQ、CAST、BRIEF、CPRS、CTRS、SDQ、PMI、MPBI、DPBI、APGAR、EPQ、YSR、SUB、ASRI、ASRS、CES-D、MPI、RBS-R、SSP、WFIRS-P、WFIRS-S、WHOQOL、CEQ、C-SBEQ、ERQ-CA、BRIEF-S、BRIEF-A、ERQ-A、RAADS-R、TAS-20、AAQOL、ARI、ESQ
