@@ -1,4 +1,4 @@
-SHARED_FIELDS = ["role", "famid",  "record_date"]
+SHARED_FIELDS = ["role", "famid",  "record_date"]  # 通用欄位；作為 unique key ，全相同的紀錄視為重複
 
 # ASRI 額外的子量表分數欄位（非 asri_ 開頭）
 # key: 欄位名, value: 該欄位的驗證規則
@@ -96,10 +96,10 @@ COLLECTION_MAP = {
     "AAQOL": SHARED_FIELDS + ["aaqol_"],
     "ARI": SHARED_FIELDS + ["ari_"],
     "ESQ": SHARED_FIELDS + ["esq_"],
+    "SF-36": SHARED_FIELDS + ["sf_"],
     # "FACES":  SHARED_FIELDS + ["faces_"],
 }
 
-UNIQUE_KEY = ["famid", "record_date", "role"]
 
 # 統一範圍的 collection
 VALID_RANGE = {
@@ -141,8 +141,20 @@ VALID_RANGE = {
     "AAQOL": {"type": "int", "range": (1, 5)},
     "ARI": {"type": "int", "range": (0, 2)},
     "ESQ": {"type": "int", "range": (1, 4)},
+    "SF-36": {"type": "per_field"},
+    # "FACES": {"type": "int", "range": (1,5)},
 }
 
+# SAICA 個別欄位規則，其餘欄位套用 SAICA_DEFAULT_RULE
+SAICA_FIELD_RULES = {
+    "saica_b2_a": {"type": "float"},
+    "saica_b2_b": {"type": "float"},
+    "saica_b2_d": {"type": "float"},
+    "saica_b2_c": {"type": "int", "range": (1, 3)},
+}
+SAICA_DEFAULT_RULE = {"type": "int", "range": (1, 4)}
+
+# SDQ 個別欄位規則，其餘欄位套用 SDQ_DEFAULT_RULE
 SDQ_FIELD_RULES = {
     "sdq_26": {"type": "int", "range": (0, 3)},
     "sdq_27": {"type": "int", "range": (0, 3)},
@@ -158,11 +170,35 @@ SDQ_FIELD_RULES = {
 }
 SDQ_DEFAULT_RULE = {"type": "int", "range": (0, 2)}
 
-# SAICA 個別欄位規則，其餘欄位套用 SAICA_DEFAULT_RULE
-SAICA_FIELD_RULES = {
-    "saica_b2_a": {"type": "float"},
-    "saica_b2_b": {"type": "float"},
-    "saica_b2_d": {"type": "float"},
-    "saica_b2_c": {"type": "int", "range": (1, 3)},
+# SF-36 個別欄位規則
+SF36_FIELD_RULES = {
+    "sf_3_a": {"type": "int", "range": (1, 3)},
+    "sf_3_b": {"type": "int", "range": (1, 3)},
+    "sf_3_c": {"type": "int", "range": (1, 3)},
+    "sf_3_d": {"type": "int", "range": (1, 3)},
+    "sf_3_e": {"type": "int", "range": (1, 3)},
+    "sf_3_f": {"type": "int", "range": (1, 3)},
+    "sf_3_g": {"type": "int", "range": (1, 3)},
+    "sf_3_h": {"type": "int", "range": (1, 3)},
+    "sf_3_i": {"type": "int", "range": (1, 3)},
+    "sf_3_j": {"type": "int", "range": (1, 3)},
+    "sf_4_a": {"type": "int", "range": (1, 2)},
+    "sf_4_b": {"type": "int", "range": (1, 2)},
+    "sf_4_c": {"type": "int", "range": (1, 2)},
+    "sf_4_d": {"type": "int", "range": (1, 2)},
+    "sf_5_a": {"type": "int", "range": (1, 2)},
+    "sf_5_b": {"type": "int", "range": (1, 2)},
+    "sf_5_c": {"type": "int", "range": (1, 2)},
+    "sf_7": {"type": "int", "range": (1, 6)},
+    "sf_9_a": {"type": "int", "range": (1, 6)},
+    "sf_9_b": {"type": "int", "range": (1, 6)},
+    "sf_9_c": {"type": "int", "range": (1, 6)},
+    "sf_9_d": {"type": "int", "range": (1, 6)},
+    "sf_9_e": {"type": "int", "range": (1, 6)},
+    "sf_9_f": {"type": "int", "range": (1, 6)},
+    "sf_9_g": {"type": "int", "range": (1, 6)},
+    "sf_9_h": {"type": "int", "range": (1, 6)},
+    "sf_9_i": {"type": "int", "range": (1, 6)},
 }
-SAICA_DEFAULT_RULE = {"type": "int", "range": (1, 4)}
+
+SF36_DEFAULT_RULE = {"type": "int", "range": (1, 5)}

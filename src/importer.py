@@ -1,5 +1,5 @@
 from pymongo import MongoClient, UpdateOne
-from config import UNIQUE_KEY
+from config import  SHARED_FIELDS
 import os
 
 def get_db():
@@ -14,7 +14,7 @@ def upsert_many(db, collection_name: str, docs: list):
     col = db[collection_name]
     operations = [
         UpdateOne(
-            {k: doc[k] for k in UNIQUE_KEY if k in doc},
+            {k: doc[k] for k in SHARED_FIELDS if k in doc},
             {"$setOnInsert": doc},
             upsert=True
         )
