@@ -97,7 +97,7 @@ COLLECTION_MAP = {
     "ARI": SHARED_FIELDS + ["ari_"],
     "ESQ": SHARED_FIELDS + ["esq_"],
     "SF-36": SHARED_FIELDS + ["sf_"],
-    "tpq": SHARED_FIELDS + ["tpq_"],
+    "TPQ": SHARED_FIELDS + ["tpq_"],
     # "FACES":  SHARED_FIELDS + ["faces_"],
 }
 
@@ -143,7 +143,7 @@ VALID_RANGE = {
     "ARI": {"type": "int", "range": (0, 2)},
     "ESQ": {"type": "int", "range": (1, 4)},
     "SF-36": {"type": "per_field"},
-    "tpq": {"type": "int", "range": (0,1)},
+    "TPQ": {"type": "int", "range": (0,1)},
     # "FACES": {"type": "int", "range": (1,5)},
 }
 
