@@ -63,10 +63,10 @@ MONGO_DB=your_db_name
 
 Excel 檔案須包含名為 `import` 的 sheet，欄位需求依匯入模式不同：
 
-| 模式     | 必要欄位                         | 入口          |
-| -------- | -------------------------------- | ------------- |
-| 標準匯入 | `famid`、`record_date`、量表欄位 | `main.py`     |
-| 年齡匯入 | `famid`、`age`、量表欄位         | `age_main.py` |
+| 模式     | 必要欄位                                 | 入口          |
+| -------- | ---------------------------------------- | ------------- |
+| 標準匯入 | `famid`、`record_date`、`role`、量表欄位 | `main.py`     |
+| 年齡匯入 | `famid`、`age`、量表欄位                 | `age_main.py` |
 
 ### 4. 執行匯入
 
@@ -122,12 +122,22 @@ python collection_stat.py
 
 ### 標準匯入（main.py）
 
-1. 讀取 Excel `import` sheet，篩選有 `famid` + `record_date` 的行
+1. 讀取 Excel `import` sheet，過濾完全空白的列
 2. 依 `config.py` 中的 `COLLECTION_MAP` 拆分欄位到各量表
 3. 驗證每個欄位值（型別、範圍）
 4. 量表欄位全為空值 / 999 的行自動跳過
-5. 驗證失敗的行寫入 `errors.xlsx`
-6. 通過驗證的資料 upsert 至 MongoDB
+5. 必要欄位（`famid` / `record_date` / `role`）檢查，缺少則報錯（見下方說明）
+6. 驗證失敗的行寫入 `errors.xlsx`
+7. 通過驗證的資料 upsert 至 MongoDB
+
+#### 必要欄位檢查（famid / record_date / role）
+
+分兩種狀況處理，缺少時顯示對應錯誤訊息：
+
+1. **整欄不存在**（Excel 沒有該欄）→ 讀檔時即中止匯入，印出 `匯入中止：Excel 缺少必要欄位欄 {欄位名}`
+2. **某列缺值**（有量表資料但缺其中一欄）→ 該列寫入 `errors.xlsx`，錯誤訊息為 `缺少必要欄位: {欄位名}`
+
+> `record_date` 無法解析的值視同缺值，由上述「某列缺值」邏輯報錯；完全空白的列則直接略過，不視為錯誤。
 
 ### 年齡匯入（age_main.py）
 
