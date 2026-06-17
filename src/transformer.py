@@ -119,10 +119,18 @@ def split_by_collection(df: pd.DataFrame, selected=None) -> tuple:
                 skipped_rows.append({"collection": collection, **row.to_dict()})
                 continue
 
+            # 必要欄位檢查（famid / record_date / role）：缺值則報錯
+            missing_required = [
+                f for f in shared
+                if converted.get(f) is None or str(converted.get(f)).strip() == ""
+            ]
+            if missing_required:
+                errors.append(f"缺少必要欄位: {', '.join(missing_required)}")
+
             if errors:
                 error_row = row.to_dict()
-                famid = error_row.get("famid", "")
-                record_date = error_row.get("record_date", "")
+                famid = error_row.get("famid") or ""
+                record_date = error_row.get("record_date") or ""
                 error_row["error"] = f"{famid}-{record_date}: " + ", ".join(errors)
                 error_row["collection"] = collection
                 error_rows.append(error_row)
