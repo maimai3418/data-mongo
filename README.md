@@ -17,6 +17,7 @@ data-mongo/
 ├── delete_main.py       # 依 famid + record_date 刪除資料
 ├── export_main.py       # 匯出 MongoDB 資料為 JSON
 ├── collection_stat.py   # 依 collection 統計 famid 數量、格式分類與重複分布
+├── precheck_upload.py   # 上傳前重複檢查（唯讀，不寫入；輸出 precheck_report.xlsx）
 └── src/
     ├── __init__.py
     ├── reader.py          # 讀取 xlsx（標準匯入用）
@@ -85,6 +86,10 @@ python export_main.py
 
 # Collection famid 統計
 python collection_stat.py
+
+# 上傳前重複檢查（唯讀，不寫入 MongoDB）
+python precheck_upload.py              # 預設讀 import_data.xlsx
+python precheck_upload.py 其他資料.xlsx  # 指定要檢查的檔案
 ```
 
 啟動後會互動選擇要處理的量表。
@@ -115,6 +120,20 @@ python collection_stat.py
 1. 互動選擇要匯出的量表（或全部）
 2. 自動建立 `exports/YYYYMMDD/` 資料夾（以當日日期命名）
 3. 每個量表匯出為獨立的 `{collection_name}.json`
+
+### 上傳前重複檢查（precheck_upload.py）
+
+在**不寫入 MongoDB** 的前提下，拿一份新的 Excel 資料跟資料庫現有資料比對，用來 double-check「會不會重複上傳」以及「日期、計畫是否相符」。完全沿用 `main.py` 的流程（輸入計畫代碼 → 選擇量表 → `read_xlsx` → `split_by_collection`），所以檢查的就是「真的會被上傳」的那批資料，且不更動任何現有模組。
+
+對資料庫**只有查詢（find）、沒有任何寫入**，唯一的輸出是本機報表 `precheck_report.xlsx`。
+
+依唯一鍵 `role` + `famid` + `record_date` 逐筆比對，產出 5 個工作表：
+
+1. **Summary** — 各量表：檢查筆數 / 新資料(會上傳) / 已存在(會略過) / 計畫不符
+2. **Duplicates** — 已存在的紀錄，含 DB 計畫 vs 本次計畫與是否相符（不符標黃）
+3. **Project_Mismatch** — 只列計畫不符的紀錄（因 upsert 用 `$setOnInsert`，重傳不會更新既有計畫，需特別注意）
+4. **New_Rows** — 會被新增上傳的紀錄
+5. **Date_Check** — 每個 famid：本檔 record_date vs DB 既有 record_date vs 本檔多出的日期
 
 ---
 
@@ -183,6 +202,7 @@ python collection_stat.py
 | `no_date_records.xlsx`    | 年齡衝突或無法估算日期的資料（含 timestamp）                                                                       |
 | `import_log.xlsx`         | **log** sheet：每次匯入的完整紀錄（含 success / insert / skipped_dup 欄位）；**pivot** sheet：依量表分組的統計數量 |
 | `exports/YYYYMMDD/*.json` | 從 MongoDB 匯出的量表 JSON 檔案                                                                                    |
+| `precheck_report.xlsx`    | 上傳前重複檢查報表（唯讀產出）：Summary / Duplicates / Project_Mismatch / New_Rows / Date_Check                    |
 
 ---
 
