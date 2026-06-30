@@ -8,7 +8,7 @@ __pycache__/
 .claude/
 
 
-.exports/
-*.json
+exports/
+# *.json
 
 assets/
