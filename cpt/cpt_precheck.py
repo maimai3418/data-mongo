@@ -58,7 +58,7 @@ DEFAULT_OUTPUT = os.path.join(SCRIPT_DIR, "cpt_precheck.xlsx")
 # 重複判定 key（欄位名稱一律先轉小寫再比對，famid / famID 視為相同）
 KEY_FIELDS = ["famid", "age"]
 # age 欄位在資料檔中可能的別名（小寫），讀檔時統一改名為 age
-AGE_ALIASES = ("age_cpt",)
+AGE_ALIASES = ("age_cpt","age")
 # field.json 中不參與比對的欄位（famid 為 key 本身，另外排除下列欄位）
 EXCLUDE_COMPARE = {"famid", "sex", "birth_date", "record_date"}
 # ────────────────────────────────────────────────────────────────────────

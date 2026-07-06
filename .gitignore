@@ -9,6 +9,6 @@ __pycache__/
 
 
 exports/
-# *.json
+*.json
 
 assets/
