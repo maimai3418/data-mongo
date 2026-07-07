@@ -8,7 +8,7 @@ ADOS 匯入：讀取已重命名的 ADOS xlsx（含 M1/M2/M3/M4 工作表），
   - 相同 famid + record_date 視為重複，不重複匯入（$setOnInsert；**不看 role**）。
   - item 欄位全為空的列略過不上傳。
 數值轉換不同：只有等於 999 才轉 null，其餘按原始值上傳（0 傳 0、1 傳 1…）。
-欄位限制讀自 ados_config.py（待補；補上後自動生效）。
+欄位限制讀自 ados_config.py。
 
 錯誤匯出至 {today}_ados_import_error.xlsx。
 
