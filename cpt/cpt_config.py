@@ -9,8 +9,8 @@ CPT 匯入設定。
   - <DATE>                        → 統一轉成 YYYY-MM-DD 文字
   - <string> / 其他               → 不轉換（原樣上傳）
 
-CPT 沒有 999 null sentinel 慣例（field.json 未見任何 range 涵蓋 999 的設計），
-不做全域 999→null 轉換。
+CPT 有 999 null sentinel 慣例（field.json 未見任何 range 涵蓋 999 的設計），
+可做全域 999→null 轉換。
 """
 
 import os

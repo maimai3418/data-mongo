@@ -9,7 +9,8 @@ CANTAB 匯入設定。
   - <DATE>                        → 統一轉成 YYYY-MM-DD 文字
   - <string> / 其他               → 不轉換（原樣上傳）
 
-CANTAB 沒有 999 null sentinel 慣例，不做全域 999→null 轉換。
+CANTAB 有 999 null sentinel 慣例（field.json 未見任何 range 涵蓋 999 的設計），
+可做全域 999→null 轉換。
 field.json 的量表欄位名稱為原始大小寫（如 "MOTmL"、"PRMmcL"），比對時保留原樣，
 不像 cantab_precheck.py 那樣統一轉小寫（轉小寫是 precheck 內部去重複比對用，
 實際存入 DB 的欄位名稱仍需與 field.json 完全一致）。

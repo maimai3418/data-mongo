@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+r"""
 把 CPT 匯出的原始 txt（每筆 8 行的區塊）解析成 xlsx。
 
 用法：
-  python cpt_convert.py cpt_raw.txt                 # 預設輸出 cpt_parsed.xlsx
+  python cpt_convert.py cpt_raw.txt                 # 輸出到輸入檔同資料夾 cpt_parsed.xlsx
+  python cpt_convert.py C:\data\cpt_raw.txt         # 輸入檔可以是任意路徑
   python cpt_convert.py cpt_raw.txt -o out.xlsx     # 指定輸出檔名
+  python cpt_convert.py cpt_raw.txt -o C:\results   # 指定輸出資料夾（檔名用預設）
   python cpt_convert.py                             # 讀預設檔 cpt_raw.txt
 
 需求套件：pandas、openpyxl
@@ -120,13 +122,29 @@ def build_dataframe(records):
     return df[front + rest]
 
 
+def resolve_output(output_arg, input_path):
+    """把 -o 參數解析成實際輸出檔路徑。
+
+    - 未指定        → 輸出到輸入檔所在資料夾，檔名 DEFAULT_OUTPUT
+    - 指定資料夾    → 該資料夾下，檔名 DEFAULT_OUTPUT
+    - 指定檔案路徑  → 直接使用（可含資料夾，不存在會自動建立）
+    """
+    if not output_arg:
+        return os.path.join(os.path.dirname(input_path), DEFAULT_OUTPUT)
+    out = os.path.abspath(output_arg)
+    if os.path.isdir(out) or output_arg.endswith(("/", "\\")):
+        return os.path.join(out, DEFAULT_OUTPUT)
+    return out
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="把 CPT 匯出的原始 txt 解析成 xlsx")
     parser.add_argument("file", nargs="?", default=DEFAULT_INPUT,
                         help=f"要解析的 CPT txt 檔案路徑（預設 {DEFAULT_INPUT}）")
-    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
-                        help=f"輸出檔名（預設 {DEFAULT_OUTPUT}）")
+    parser.add_argument("-o", "--output", default=None,
+                        help="輸出位置：可給檔案路徑或資料夾"
+                             f"（預設輸出到輸入檔所在資料夾，檔名 {DEFAULT_OUTPUT}）")
     args = parser.parse_args()
 
     path = os.path.abspath(args.file)
@@ -134,11 +152,14 @@ def main():
         print(f"Error: 找不到檔案 {path}")
         sys.exit(1)
 
+    out_path = resolve_output(args.output, path)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
     records = parse_file(path)
     df = build_dataframe(records)
 
-    df.to_excel(args.output, index=False, sheet_name="CPT")
-    print(f"✅ Done: {len(df)} records → {os.path.abspath(args.output)}")
+    df.to_excel(out_path, index=False, sheet_name="CPT")
+    print(f"✅ Done: {len(df)} records → {out_path}")
     print(f"   Columns ({len(df.columns)}): {list(df.columns)}")
 
 
