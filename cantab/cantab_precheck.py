@@ -7,13 +7,18 @@ CANTAB 匯入前彙整檢查（precheck）。
   1. 以 famid + age 作為重複判定的 key。
      欄位名稱一律先轉小寫再比對（famid / famID 視為相同）；
      age 欄位另可接受別名 age_CANTAB / age_cantab。
-  2. key 相同時，比對 cantab/fields 中 field.json 內
+  2. 比對前先把每個檔案的欄位對齊 field.json：
+       - 檔案缺少的欄位 → 補上該欄位，比對欄位一律填 999。
+       - 欄位存在但值為空白 → 一樣填 999。
+       - key（famid/age）與排除欄位（sex, birth_date, record_date,
+         session_start_time）只補欄位、不填 999，維持原值。
+  3. key 相同時，比對 cantab/fields 中 field.json 內
      除了 sex, birth_date, record_date, session_start_time
      （與 key 本身 famid）以外的所有欄位
      （field.json 欄位名稱同樣轉小寫比對）：
        - 全部相同 → 視為同一筆，只保留一筆（合併記錄所有資料來源）。
        - 有任何差異 → 視為不同筆，全部保留（各自標記資料來源與差異欄位）。
-  3. 輸出 cantab_precheck.xlsx：
+  4. 輸出 cantab_precheck.xlsx：
        - Summary    檢查彙總（檔案數、總列數、不重複紀錄數、重複移除數…）
        - Files      所有進行 precheck 的檔案清單，標記出現重複資料的檔案
        - Duplicates 完全重複被去重的紀錄與其出現的檔案名稱
@@ -60,10 +65,13 @@ DEFAULT_OUTPUT = os.path.join(SCRIPT_DIR, "cantab_precheck.xlsx")
 # 重複判定 key（欄位名稱一律先轉小寫再比對，famid / famID 視為相同）
 KEY_FIELDS = ["famid", "age"]
 # age 欄位在資料檔中可能的別名（小寫），讀檔時統一改名為 age
-AGE_ALIASES = ("age_cantab","age")
+# raw_cantab_age 為 cantab_rename.py 改名後的欄名
+AGE_ALIASES = ("raw_cantab_age", "age_cantab", "age")
 # field.json 中不參與比對的欄位（famid 為 key 本身，另外排除下列欄位）
 EXCLUDE_COMPARE = {"famid", "sex", "birth_date", "record_date",
                    "session_start_time"}
+# 比對欄位缺欄/空值的補值；key 與 EXCLUDE_COMPARE 欄位不套用
+FILL_VALUE = "999"
 # ────────────────────────────────────────────────────────────────────────
 
 # ---- 報表樣式（沿用 precheck_upload.py 的風格）----
@@ -202,15 +210,20 @@ def collect_files(paths, output_path):
     return unique
 
 
-def read_records(files):
-    """讀取所有檔案的所有工作表，回傳 (紀錄清單, 欄位出現順序, 讀檔錯誤)。
+def read_records(files, json_fields, compare_fields):
+    """讀取所有檔案的所有工作表，回傳 (紀錄清單, 欄位出現順序, 讀檔錯誤, 補值統計)。
 
     每筆紀錄：{"source": 檔名[｜工作表], "row": Excel 列號, "data": {欄位: 原值}}
+    補值統計：{source: {"added": 補上的缺欄數, "filled": 空值填 999 的格數}}
+
+    讀入後先把欄位對齊 field.json：缺少的欄位補上；比對欄位（compare_fields）
+    的缺欄與空白值一律填 FILL_VALUE(999)，key 與排除欄位只補欄位、不填值。
     """
     records = []
     all_cols = []
     seen_cols = set()
     read_errors = []
+    fill_stats = OrderedDict()
 
     for filepath in files:
         filename = os.path.basename(filepath)
@@ -229,8 +242,9 @@ def read_records(files):
             if bad_cols:
                 read_errors.append((source, f"欄位標題非字串: {bad_cols}"))
                 print(f"[欄位異常] {source} → {bad_cols}")
-            df.columns = df.columns.str.strip().str.lower()
-            
+            df.columns = [c.strip().lower() if isinstance(c, str) else c
+                          for c in df.columns]
+
             df = df.loc[:, df.columns.notna()]
             df = df.dropna(how="all")
 
@@ -239,6 +253,22 @@ def read_records(files):
                 alias = next((a for a in AGE_ALIASES if a in df.columns), None)
                 if alias:
                     df = df.rename(columns={alias: "age"})
+
+            # 欄位對齊 field.json：缺少的欄位補上；比對欄位的缺欄與空白值
+            # 一律填 999（key 與排除欄位只補欄位、不填值）
+            missing_cols = [c for c in json_fields if c not in df.columns]
+            filled = 0
+            for col in compare_fields:
+                if col not in df.columns:
+                    df[col] = FILL_VALUE
+                    continue
+                blank = df[col].map(lambda v: norm_value(v) is None)
+                filled += int(blank.sum())
+                df.loc[blank, col] = FILL_VALUE
+            for col in missing_cols:
+                if col not in df.columns:
+                    df[col] = None
+            fill_stats[source] = {"added": len(missing_cols), "filled": filled}
 
             for col in df.columns:
                 if col not in seen_cols:
@@ -252,7 +282,7 @@ def read_records(files):
                     "data": row.to_dict(),
                 })
 
-    return records, all_cols, read_errors
+    return records, all_cols, read_errors, fill_stats
 
 
 # ── 核心比對 ────────────────────────────────────────────────────────────
@@ -343,11 +373,13 @@ def source_stats(records, dup_groups, conflicts, missing):
 
 # ── 輸出 ────────────────────────────────────────────────────────────────
 def build_report(output_path, files, json_path, json_fields, compare_fields,
-                 records, all_cols, read_errors, kept, dup_groups, conflicts,
-                 missing):
+                 records, all_cols, read_errors, fill_stats, kept, dup_groups,
+                 conflicts, missing):
     n_removed = sum(len(recs) - 1 for _, recs in dup_groups)
     n_conflict_rows = sum(len(v) for _, v, _ in conflicts)
     n_unique = len(kept)
+    n_added_cols = sum(s["added"] for s in fill_stats.values())
+    n_filled = sum(s["filled"] for s in fill_stats.values())
 
     wb = Workbook()
 
@@ -359,13 +391,16 @@ def build_report(output_path, files, json_path, json_fields, compare_fields,
     ws["A2"] = (f"重複判定 key：{' + '.join(KEY_FIELDS)}｜"
                 f"比對欄位：{len(compare_fields)} 個"
                 f"（{os.path.basename(json_path)}，"
-                f"排除 {', '.join(sorted(EXCLUDE_COMPARE - {'famid'}))}）")
+                f"排除 {', '.join(sorted(EXCLUDE_COMPARE - {'famid'}))}）｜"
+                f"比對欄位缺欄/空值先補 {FILL_VALUE} 再比對")
     ws["A2"].font = BASE_FONT
     summary_rows = [
         ("檢查檔案數", len(files)),
         ("讀取失敗檔案數", len(read_errors)),
         ("總列數", len(records)),
         ("缺 key（famid/age）列數", len(missing)),
+        (f"缺欄補上數（各sheet加總，填{FILL_VALUE}）", n_added_cols),
+        (f"空白值填{FILL_VALUE}格數", n_filled),
         ("彙整後不重複紀錄數", n_unique),
         ("完全重複移除筆數", n_removed),
         ("完全重複群組數", len(dup_groups)),
@@ -381,16 +416,20 @@ def build_report(output_path, files, json_path, json_fields, compare_fields,
     file_rows = []
     for source, s in stats.items():
         mark = WARN_MARK if (s["dup"] or s["conflict"]) else ""
+        fill = fill_stats.get(source, {"added": 0, "filled": 0})
         file_rows.append((source, s["rows"], s["missing"],
+                          fill["added"], fill["filled"],
                           s["dup"], s["conflict"], mark))
     for filename, err in read_errors:
-        file_rows.append((filename, 0, 0, 0, 0, f"讀取失敗：{err}"))
+        file_rows.append((filename, 0, 0, 0, 0, 0, 0, f"讀取失敗：{err}"))
     if not file_rows:
-        file_rows = [("（無）", 0, 0, 0, 0, "")]
+        file_rows = [("（無）", 0, 0, 0, 0, 0, 0, "")]
     write_table(
         ws,
-        ["檔案（｜工作表）", "列數", "缺key列數", "完全重複列數", "差異保留列數", "標記"],
-        file_rows, warn_col=5, warn_value=WARN_MARK,
+        ["檔案（｜工作表）", "列數", "缺key列數",
+         f"缺欄補{FILL_VALUE}欄數", f"空值填{FILL_VALUE}格數",
+         "完全重複列數", "差異保留列數", "標記"],
+        file_rows, warn_col=7, warn_value=WARN_MARK,
     )
     autofit(ws, max_width=60)
 
@@ -481,7 +520,8 @@ def main(argv=None):
     print(f"   重複判定 key：{' + '.join(KEY_FIELDS)}｜比對欄位：{len(compare_fields)} 個"
           f"（排除 {', '.join(sorted(EXCLUDE_COMPARE - {'famid'}))}）")
 
-    records, all_cols, read_errors = read_records(files)
+    records, all_cols, read_errors, fill_stats = read_records(
+        files, json_fields, compare_fields)
     for filename, err in read_errors:
         print(f"⚠️  {filename}: {err}")
     print(f"共讀取 {len(records)} 列")
@@ -490,7 +530,8 @@ def main(argv=None):
 
     summary_rows = build_report(
         args.output, files, json_path, json_fields, compare_fields,
-        records, all_cols, read_errors, kept, dup_groups, conflicts, missing)
+        records, all_cols, read_errors, fill_stats, kept, dup_groups,
+        conflicts, missing)
 
     # ---- 主控台摘要 ----
     print("\n===== 檢查結果 =====")

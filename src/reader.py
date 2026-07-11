@@ -22,6 +22,9 @@ def read_xlsx(filepath: str) -> pd.DataFrame:
     if missing_cols:
         raise SystemExit(f"匯入中止：Excel 缺少必要欄位欄 {', '.join(missing_cols)}")
 
+    # famid 清理：去頭尾空白、清除 Excel 浮點數殘留（"12345.0" → "12345"）
+    df["famid"] = df["famid"].str.strip().str.replace(r"\.0$", "", regex=True)
+
     df = df.dropna(how="all")  # 只過濾完全空白的列
     df = df.where(pd.notna(df), None)
     df["record_date"] = df["record_date"].apply(_format_date)

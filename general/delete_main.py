@@ -1,3 +1,10 @@
+import os
+import sys
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 from dotenv import load_dotenv
 import pandas as pd
 from src.importer import get_db
@@ -33,8 +40,12 @@ def main():
                 role_val = str(int(float(role_raw)))
             except (ValueError, TypeError):
                 role_val = role_raw
+            # famid 清理：去頭尾空白、清除 Excel 浮點數殘留（"12345.0" → "12345"）
+            famid_val = str(row["famid"]).strip()
+            if famid_val.endswith(".0"):
+                famid_val = famid_val[:-2]
             f = {
-                "famid": str(row["famid"]).strip(),
+                "famid": famid_val,
                 "record_date": str(row["record_date"]).strip(),
                 "role": role_val,
             }

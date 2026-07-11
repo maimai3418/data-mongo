@@ -1,3 +1,10 @@
+import os
+import sys
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 from dotenv import load_dotenv
 import pandas as pd
 from config import COLLECTION_MAP
@@ -8,6 +15,7 @@ from src.importer import get_db, upsert_many
 from src.age_matcher import find_age_conflicts, estimate_record_date
 from src.no_date_writer import write_no_date_xlsx
 from src.error_writer import write_error_xlsx
+from src.conflict_writer import write_conflict_xlsx
 from src.import_logger import write_import_log
 from src.logger import log_summary
 from src.utils.select_collections import select_collections
@@ -23,6 +31,9 @@ def read_xlsx_age(filepath: str) -> pd.DataFrame:
     """Read Excel, require famid + age (record_date not required)."""
     df = pd.read_excel(filepath, sheet_name="import", dtype=str)
     df.columns = df.columns.str.strip()
+    # famid 清理：去頭尾空白、清除 Excel 浮點數殘留（"12345.0" → "12345"）
+    if "famid" in df.columns:
+        df["famid"] = df["famid"].str.strip().str.replace(r"\.0$", "", regex=True)
     df = df.where(pd.notna(df), None)
     df = df.dropna(subset=["famid", "age"])
     df = df.reset_index(drop=True)
@@ -174,6 +185,7 @@ def main():
     # Upsert to MongoDB
     print("writing to MongoDB...")
     log_entries = []
+    all_conflict_rows = []
     for col_name, docs in import_docs.items():
         error_count = len([r for r in error_rows if r.get("collection") == col_name])
         no_date_count = len([r for r in no_date_rows if r.get("collection") == col_name])
@@ -183,13 +195,17 @@ def main():
             for doc in docs:
                 doc["research_project_code"] = project_code
         result = upsert_many(db, col_name, docs)
-        inserted, skipped_dup = result if result else (0, 0)
+        inserted, skipped_dup, conflict_docs, conflict_rows = (
+            result if result else (0, 0, 0, [])
+        )
+        all_conflict_rows.extend(conflict_rows)
         entry = {
             "collection": col_name,
             "total": len(df),
             "success": len(docs),
             "insert": inserted,
             "skipped_dup": skipped_dup,
+            "value_conflict": conflict_docs,
             "errors": error_count,
             "skipped": skipped_col,
             "no_date_conflicts": no_date_count,
@@ -197,6 +213,11 @@ def main():
         if project_code:
             entry["research_project_code"] = project_code
         log_entries.append(entry)
+
+    # 匯出 value_conflict 衝突報告（key 相同但欄位值不同，未覆蓋 DB）
+    if all_conflict_rows:
+        print("writing conflict report...")
+        wait_and_retry(lambda: write_conflict_xlsx(all_conflict_rows), "conflicts.xlsx")
 
     print("writing import log...")
     wait_and_retry(lambda: write_import_log(log_entries), "import_log.xlsx")

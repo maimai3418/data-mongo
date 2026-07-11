@@ -9,16 +9,16 @@
 
 用法：
   # 直接在指令列定義對應（CELL=欄名，可給多組）
-  python cell_extract.py <資料夾> --map A1=id B5=name C2=score
+  python tools/cell_extract.py <資料夾> --map A1=id B5=name C2=score
 
   # 用 JSON 檔定義對應（{"A1": "id", "B5": "name"}）
-  python cell_extract.py <資料夾> --map-file mapping.json
+  python tools/cell_extract.py <資料夾> --map-file mapping.json
 
   # 其他選項
-  python cell_extract.py <資料夾> --map A1=id -o out.xlsx
-  python cell_extract.py <資料夾> --map A1=id --sheet 名稱或索引
-  python cell_extract.py <資料夾> --map A1=id --recursive
-  python cell_extract.py <資料夾> --map A1=id --ext .xls .xlsx
+  python tools/cell_extract.py <資料夾> --map A1=id -o out.xlsx
+  python tools/cell_extract.py <資料夾> --map A1=id --sheet 名稱或索引
+  python tools/cell_extract.py <資料夾> --map A1=id --recursive
+  python tools/cell_extract.py <資料夾> --map A1=id --ext .xls .xlsx
 
 需求套件：pandas、openpyxl、xlrd（讀 .xls 用）
 """

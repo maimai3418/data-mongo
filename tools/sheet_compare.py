@@ -16,11 +16,11 @@
   5) Only_in_B     只在 B 出現的整筆資料
 
 範例：
-  python sheet_compare.py data.xlsx                      # 預設取前兩個工作表，依位置對齊
-  python sheet_compare.py data.xlsx --sheets A B         # 指定工作表名稱
-  python sheet_compare.py data.xlsx --key famid          # 依 famid 欄位對齊
-  python sheet_compare.py data.xlsx --key famid role      # 依複合鍵對齊
-  python sheet_compare.py data.xlsx -o out.xlsx
+  python tools/sheet_compare.py data.xlsx                      # 預設取前兩個工作表，依位置對齊
+  python tools/sheet_compare.py data.xlsx --sheets A B         # 指定工作表名稱
+  python tools/sheet_compare.py data.xlsx --key famid          # 依 famid 欄位對齊
+  python tools/sheet_compare.py data.xlsx --key famid role      # 依複合鍵對齊
+  python tools/sheet_compare.py data.xlsx -o out.xlsx
 
 需求套件：pandas、openpyxl
 """

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-比對多個 xlsx 檔案（所有工作表）的標題列（head row）。
+比對多個 xlsx/csv 檔案（所有工作表）的標題列（head row）。
 
-讀取指定檔案或資料夾內所有 xlsx/xls 的每個工作表，只取標題列，
+讀取指定檔案或資料夾內所有 xlsx/xls/csv 的每個工作表，只取標題列，
 輸出一份對照報表，標示每個欄位出現在哪些檔案/工作表：
   - Columns  欄位 × 來源矩陣（儲存格顯示該來源的原始欄名，
              非所有來源都有的欄位整列標黃）
@@ -14,9 +14,9 @@
 矩陣中顯示各來源的原始寫法。
 
 用法（從專案根目錄執行，-o 輸出檔名必填）：
-  python general/compare_columns.py <檔案或資料夾>... -o 報表名稱.xlsx
-  python general/compare_columns.py data_dir/ -o columns_report.xlsx
-  python general/compare_columns.py a.xlsx b.xlsx -o 對照.xlsx
+  python tools/compare_columns.py <檔案或資料夾>... -o 報表名稱.xlsx
+  python tools/compare_columns.py data_dir/ -o columns_report.xlsx
+  python tools/compare_columns.py a.xlsx b.csv -o 對照.xlsx
 
 需求套件：pandas、openpyxl
 """
@@ -99,7 +99,7 @@ def collect_files(paths, output_path):
     for p in paths:
         if os.path.isdir(p):
             for f in sorted(os.listdir(p)):
-                if f.endswith((".xlsx", ".xls")) and not f.startswith("~$"):
+                if f.lower().endswith((".xlsx", ".xls", ".csv")) and not f.startswith("~$"):
                     files.append(os.path.join(p, f))
         elif os.path.isfile(p):
             files.append(p)
@@ -116,6 +116,20 @@ def collect_files(paths, output_path):
 
 
 # ── 讀取標題列 ──────────────────────────────────────────────────────────
+CSV_ENCODINGS = ("utf-8-sig", "cp950")  # 依序嘗試（BOM utf-8 → Windows 繁中）
+
+
+def read_csv_header(filepath):
+    """讀取 csv 標題列，依 CSV_ENCODINGS 依序嘗試編碼。"""
+    last_err = None
+    for enc in CSV_ENCODINGS:
+        try:
+            return pd.read_csv(filepath, nrows=0, encoding=enc)
+        except UnicodeDecodeError as e:
+            last_err = e
+    raise last_err
+
+
 def read_headers(files):
     """讀取所有檔案所有工作表的標題列（nrows=0 只讀標題、不載入資料）。
 
@@ -128,7 +142,10 @@ def read_headers(files):
     for filepath in files:
         filename = os.path.basename(filepath)
         try:
-            all_sheets = pd.read_excel(filepath, sheet_name=None, nrows=0)
+            if filename.lower().endswith(".csv"):
+                all_sheets = {None: read_csv_header(filepath)}
+            else:
+                all_sheets = pd.read_excel(filepath, sheet_name=None, nrows=0)
         except Exception as e:
             read_errors.append((filename, f"無法讀取檔案: {e}"))
             continue
@@ -205,9 +222,9 @@ def build_report(output_path, files, sources, read_errors):
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
-        description="比對多個 xlsx 檔案（所有工作表）的標題列，輸出欄位×來源對照表")
+        description="比對多個 xlsx/csv 檔案（所有工作表）的標題列，輸出欄位×來源對照表")
     parser.add_argument("paths", nargs="+",
-                        help="要讀取的 xlsx 檔案或資料夾")
+                        help="要讀取的 xlsx/csv 檔案或資料夾")
     parser.add_argument("-o", "--output", required=True, metavar="XLSX",
                         help="報表輸出檔名（必填，例如 columns_report.xlsx）")
     return parser.parse_args(argv)
@@ -218,7 +235,7 @@ def main(argv=None):
 
     files = collect_files(args.paths, args.output)
     if not files:
-        print("Error: 找不到任何 xlsx 檔案")
+        print("Error: 找不到任何 xlsx/csv 檔案")
         sys.exit(1)
     print(f"📄 檔案數：{len(files)}")
 
