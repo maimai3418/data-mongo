@@ -26,7 +26,14 @@ import warnings
 
 import pandas as pd
 
+# 讓本腳本可從 cpt/ 子目錄被直接執行：把專案根目錄加入 sys.path，
+# 以便 import 根目錄的 src 套件（wait_and_retry 等）。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 from cpt_config import CPT_FIELDS_DIR, discover_field_json
+from src.utils.wait_and_retry import wait_and_retry
 
 warnings.filterwarnings("ignore")
 
@@ -228,10 +235,13 @@ def main():
     unmatched_out.insert(0, "excel_row", unmatched.index + 2)
     mismatch_df = pd.DataFrame(mismatch_rows)
 
-    with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-        out_main.to_excel(writer, index=False, sheet_name="imported_backfilled")
-        mismatch_df.to_excel(writer, index=False, sheet_name="date_mismatch")
-        unmatched_out.to_excel(writer, index=False, sheet_name="unmatched")
+    def _save():
+        with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
+            out_main.to_excel(writer, index=False, sheet_name="imported_backfilled")
+            mismatch_df.to_excel(writer, index=False, sheet_name="date_mismatch")
+            unmatched_out.to_excel(writer, index=False, sheet_name="unmatched")
+
+    wait_and_retry(_save, out_path)
 
     n_miss = stats["tier1"] + stats["tier2"] + stats["unmatched"]
     print(f"✅ Done → {out_path}")

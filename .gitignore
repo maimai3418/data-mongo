@@ -3,6 +3,10 @@ venv/
 __pycache__/
 *.xlsx
 *.csv
+!import_log.xlsx
+!errors.xlsx
+!need_to_check.xlsx
+!cantab_new_fields.xlsx
 
 .vscode/
 .claude/

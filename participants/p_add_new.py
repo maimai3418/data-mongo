@@ -27,6 +27,8 @@ if _PROJECT_ROOT not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 
+from src.utils.wait_and_retry import wait_and_retry
+
 # 讓中文/emoji 在 Windows 主控台（cp950）也能正常輸出
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -197,7 +199,7 @@ def export_results(to_insert, to_update, skip_count,
         return
     out = pd.DataFrame(rows)
     out[DIFF_COL] = out[DIFF_COL].apply(str)
-    out.to_excel(output_path, index=False)
+    wait_and_retry(lambda: out.to_excel(output_path, index=False), output_path)
     print(f"Exported {len(to_insert)} insert + {len(to_update)} update -> {output_path}  "
           f"({skip_count} skipped)")
 

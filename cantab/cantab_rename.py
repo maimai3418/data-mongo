@@ -349,8 +349,12 @@ def main(argv=None):
 
         merged = pd.concat(frames, ignore_index=True, sort=False)
         out_path = os.path.join(args.output_dir, out_base + ".xlsx")
-        with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-            merged.to_excel(writer, sheet_name="Sheet1", index=False)
+
+        def _save(path=out_path, df=merged):
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name="Sheet1", index=False)
+
+        wait_and_retry(_save, out_path)
         n_ok += 1
         skipped_note = f"｜略過 {n_skipped} 檔" if n_skipped else ""
         print(f"  → {out_base}.xlsx：{len(merged)} 列 × {len(merged.columns)} 欄"

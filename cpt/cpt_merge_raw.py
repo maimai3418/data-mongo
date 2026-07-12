@@ -23,7 +23,14 @@ import warnings
 
 import pandas as pd
 
+# 讓本腳本可從 cpt/ 子目錄被直接執行：把專案根目錄加入 sys.path，
+# 以便 import 根目錄的 src 套件（wait_and_retry 等）。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 from cpt_config import CPT_FIELDS_DIR, discover_field_json
+from src.utils.wait_and_retry import wait_and_retry
 
 warnings.filterwarnings("ignore")
 
@@ -262,9 +269,12 @@ def main():
     merged_df = build_merged_df(merged, score_cols)
     conflicts_df = build_conflicts_df(conflicts)
 
-    with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-        merged_df.to_excel(writer, index=False, sheet_name="merged")
-        conflicts_df.to_excel(writer, index=False, sheet_name="famid_conflicts")
+    def _save():
+        with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
+            merged_df.to_excel(writer, index=False, sheet_name="merged")
+            conflicts_df.to_excel(writer, index=False, sheet_name="famid_conflicts")
+
+    wait_and_retry(_save, out_path)
 
     print(f"✅ Done: {total_rows} 列（5 表）→ {len(merged_df)} 筆唯一施測 → {out_path}")
     for sheet in PRIORITY:

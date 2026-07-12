@@ -24,6 +24,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+from src.utils.wait_and_retry import wait_and_retry
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_A = os.path.join(BASE_DIR, "db.json")    # 正式環境（基準）
 FILE_B = os.path.join(BASE_DIR, "test.json")  # 測試環境
@@ -200,7 +202,7 @@ def main():
     write_only("Only_in_A", only_a, map_a, "db.json")
     write_only("Only_in_B", only_b, map_b, "test.json")
 
-    wb.save(OUT_XLSX)
+    wait_and_retry(lambda: wb.save(OUT_XLSX), OUT_XLSX)
     print(f"已輸出：{OUT_XLSX}")
     print(f"共同 {len(both)}（相同 {len(identical)} / 差異 {differ_famids}）"
           f"｜只在 A {len(only_a)}｜只在 B {len(only_b)}"

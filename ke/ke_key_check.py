@@ -25,6 +25,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from src.importer import get_db
+from src.utils.wait_and_retry import wait_and_retry
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -136,9 +137,12 @@ def main():
 
     print(f"沒有出現在全部非空 collection（{len(nonempty_cols)} 個）的 key：{len(diff_keys)}")
 
-    with pd.ExcelWriter(OUTPUT_PATH, engine="openpyxl") as writer:
-        summary_df.to_excel(writer, sheet_name="summary", index=False)
-        diff_df.to_excel(writer, sheet_name="diff_matrix", index=False)
+    def _save():
+        with pd.ExcelWriter(OUTPUT_PATH, engine="openpyxl") as writer:
+            summary_df.to_excel(writer, sheet_name="summary", index=False)
+            diff_df.to_excel(writer, sheet_name="diff_matrix", index=False)
+
+    wait_and_retry(_save, OUTPUT_PATH)
 
     print(f"已匯出: {OUTPUT_PATH}")
 

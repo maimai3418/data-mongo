@@ -5,6 +5,14 @@ import pandas as pd
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
+# 讓本腳本可從 tools/ 子目錄被直接執行：把專案根目錄加入 sys.path，
+# 以便 import 根目錄的 src 套件（wait_and_retry 等）。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from src.utils.wait_and_retry import wait_and_retry
+
 SUPPORTED_EXT = {".xlsx", ".xls", ".xlsm", ".csv", ".tsv"}
 KEYWORDS = ["time", "test", "study"]
 
@@ -86,7 +94,7 @@ def write_xlsx(results, output):
     ws.column_dimensions["D"].width = 40
     ws.column_dimensions["E"].width = 60
     ws.auto_filter.ref = f"A1:E{len(results)+1}"
-    wb.save(output)
+    wait_and_retry(lambda: wb.save(output), output)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scan folder for files with specific column keywords")

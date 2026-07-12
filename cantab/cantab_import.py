@@ -53,6 +53,7 @@ from openpyxl.utils import get_column_letter
 
 from src.importer import get_db
 from src.no_date_writer import write_no_date_xlsx
+from src.utils.wait_and_retry import wait_and_retry
 from cantab_config import (
     CANTAB_COLLECTION,
     CANTAB_SHARED_FIELDS,
@@ -416,7 +417,7 @@ def export_errors(errors, output_path):
         for col_idx, key in enumerate(headers, 1):
             ws.cell(row=row_idx, column=col_idx, value=err.get(key))
     ws.freeze_panes = "A2"
-    wb.save(output_path)
+    wait_and_retry(lambda: wb.save(output_path), output_path)
     print(f"\n✗ 共 {len(errors)} 筆錯誤，已匯出: {os.path.basename(output_path)}")
 
 
@@ -490,7 +491,7 @@ def export_conflicts(batch_conflicts, value_conflicts, compare_fields, output_pa
         letter = get_column_letter(col[0].column)
         ws2.column_dimensions[letter].width = 30
 
-    wb.save(output_path)
+    wait_and_retry(lambda: wb.save(output_path), output_path)
     n_total = sum(len(v) for _, v in batch_conflicts) + len(value_conflicts)
     print(f"⚠️  共 {n_total} 筆衝突（待人工審查），已匯出: {os.path.basename(output_path)}")
 

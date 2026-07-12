@@ -34,6 +34,14 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import coordinate_to_tuple
 
+# 讓本腳本可從 tools/ 子目錄被直接執行：把專案根目錄加入 sys.path，
+# 以便 import 根目錄的 src 套件（wait_and_retry 等）。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from src.utils.wait_and_retry import wait_and_retry
+
 # 讓中文/emoji 在 Windows 主控台（cp950）也能正常輸出
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -195,7 +203,7 @@ def write_xlsx(rows, out_names, output, has_error):
     ws.freeze_panes = "A2"
     if len(rows) >= 0:
         ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{len(rows) + 1}"
-    wb.save(output)
+    wait_and_retry(lambda: wb.save(output), output)
 
 
 def main():

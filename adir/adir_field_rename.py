@@ -53,12 +53,17 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
-# 讓本檔可 import 同層的 adir_config（沿用其 field.json 偵測與 header 定義）
+# 讓本檔可 import 同層的 adir_config（沿用其 field.json 偵測與 header 定義），
+# 以及專案根目錄的 src 套件（wait_and_retry 等）
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
 if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
 from adir_config import ADIR_FIELDS_DIR, discover_field_json, ADIR_SHEET_VERSION_MAP
+from src.utils.wait_and_retry import wait_and_retry
 
 # 讓中文/emoji 在 Windows 主控台（cp950）也能正常輸出
 try:
@@ -293,9 +298,12 @@ def process_file(filepath, all_fields, errors, overwrite, famid_prefix):
             stem = Path(filepath).stem
             out_path = os.path.join(os.path.dirname(filepath), f"{stem}_renamed.xlsx")
 
-        with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-            for sheet_name, df in modified.items():
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        def _save():
+            with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
+                for sheet_name, df in modified.items():
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+        wait_and_retry(_save, out_path)
         print(f"  已儲存: {os.path.basename(out_path)} ({', '.join(modified.keys())})")
 
     return any_success
@@ -329,7 +337,7 @@ def export_errors(errors, error_output):
         ws.column_dimensions[letter].width = width
     ws.freeze_panes = "A2"
 
-    wb.save(error_output)
+    wait_and_retry(lambda: wb.save(error_output), error_output)
     print(f"\n✗ 共 {len(errors)} 筆錯誤，已匯出: {os.path.basename(error_output)}")
 
 

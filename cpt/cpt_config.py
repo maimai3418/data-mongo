@@ -9,8 +9,8 @@ CPT 匯入設定。
   - <DATE>                        → 統一轉成 YYYY-MM-DD 文字
   - <string> / 其他               → 不轉換（原樣上傳）
 
-CPT 有 999 null sentinel 慣例（field.json 未見任何 range 涵蓋 999 的設計），
-可做全域 999→null 轉換。
+999 處理：cpt_import.py 實際上「不做」全域 999→null 轉換（CLAUDE.md §7：
+999 不是通用 sentinel），超出 range 的 999 會以驗證錯誤浮現，不被靜默吸收。
 """
 
 import os

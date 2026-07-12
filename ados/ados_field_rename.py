@@ -39,6 +39,14 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
+# 讓本腳本可從 ados/ 子目錄被直接執行：把專案根目錄加入 sys.path，
+# 以便 import 根目錄的 src 套件（wait_and_retry 等）。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from src.utils.wait_and_retry import wait_and_retry
+
 # 讓中文/emoji 在 Windows 主控台（cp950）也能正常輸出
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -295,9 +303,12 @@ def process_file(filepath, specs, errors, overwrite, famid_prefix):
             stem = Path(filepath).stem
             out_path = os.path.join(os.path.dirname(filepath), f"{stem}_renamed.xlsx")
 
-        with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-            for sheet_name, df in modified.items():
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        def _save():
+            with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
+                for sheet_name, df in modified.items():
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+        wait_and_retry(_save, out_path)
         print(f"  已儲存: {os.path.basename(out_path)} ({', '.join(modified.keys())})")
 
     return any_success
@@ -334,7 +345,7 @@ def export_errors(errors, error_output):
     ws.column_dimensions["B"].width = 10
     ws.column_dimensions["C"].width = 60
 
-    wb.save(error_output)
+    wait_and_retry(lambda: wb.save(error_output), error_output)
     print(f"\n✗ 共 {len(errors)} 筆錯誤，已匯出: {os.path.basename(error_output)}")
 
 

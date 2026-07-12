@@ -35,6 +35,14 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
+# 讓本腳本可從 tools/ 子目錄被直接執行：把專案根目錄加入 sys.path，
+# 以便 import 根目錄的 src 套件（wait_and_retry 等）。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from src.utils.wait_and_retry import wait_and_retry
+
 # 讓中文/emoji 在 Windows 主控台（cp1252/cp950）也能正常輸出
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -306,7 +314,7 @@ def main():
     ws = wb.create_sheet("Only_in_B")
     write_records(ws, only_b, cols_b)
 
-    wb.save(args.output)
+    wait_and_retry(lambda: wb.save(args.output), args.output)
 
     print(f"✅ 已輸出：{os.path.abspath(args.output)}")
     print(f"   A={name_a}（{len(df_a)} 列）｜B={name_b}（{len(df_b)} 列）｜{align_desc}")

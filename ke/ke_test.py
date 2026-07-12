@@ -19,6 +19,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from src.importer import get_db
+from src.utils.wait_and_retry import wait_and_retry
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -98,12 +99,15 @@ def main():
         columns=["item", "value"],
     )
 
-    with pd.ExcelWriter(OUTPUT_PATH, engine="openpyxl") as writer:
-        summary_df.to_excel(writer, sheet_name="summary", index=False)
-        pd.DataFrame(to_rows(keys_a, only_a), columns=columns).to_excel(
-            writer, sheet_name="A_only", index=False)
-        pd.DataFrame(to_rows(keys_b, only_b), columns=columns).to_excel(
-            writer, sheet_name="B_only", index=False)
+    def _save():
+        with pd.ExcelWriter(OUTPUT_PATH, engine="openpyxl") as writer:
+            summary_df.to_excel(writer, sheet_name="summary", index=False)
+            pd.DataFrame(to_rows(keys_a, only_a), columns=columns).to_excel(
+                writer, sheet_name="A_only", index=False)
+            pd.DataFrame(to_rows(keys_b, only_b), columns=columns).to_excel(
+                writer, sheet_name="B_only", index=False)
+
+    wait_and_retry(_save, OUTPUT_PATH)
 
     print(f"已匯出: {OUTPUT_PATH}")
 

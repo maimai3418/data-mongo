@@ -45,6 +45,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
 from src.importer import get_db
+from src.utils.wait_and_retry import wait_and_retry
 from adir_config import (
     ADIR_COLLECTION,
     ADIR_SHARED_FIELDS,
@@ -268,7 +269,7 @@ def export_errors(errors, output_path):
         ws.column_dimensions[letter].width = width
     ws.freeze_panes = "A2"
 
-    wb.save(output_path)
+    wait_and_retry(lambda: wb.save(output_path), output_path)
     print(f"\n✗ 共 {len(errors)} 筆錯誤，已匯出: {os.path.basename(output_path)}")
 
 

@@ -30,6 +30,8 @@ if _PROJECT_ROOT not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 
+from src.utils.wait_and_retry import wait_and_retry
+
 # 讓中文/emoji 在 Windows 主控台（cp950）也能正常輸出
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -233,7 +235,7 @@ def export_conflicts(df: pd.DataFrame, output_path: str = OUTPUT_FILE) -> None:
     for col in diff_cols:
         flagged[col] = flagged[col].apply(
             lambda v: str(v) if v is not None else None)
-    flagged.to_excel(output_path, index=False)
+    wait_and_retry(lambda: flagged.to_excel(output_path, index=False), output_path)
     print(f"Exported {len(flagged)} conflict record(s) -> {output_path}")
 
 
